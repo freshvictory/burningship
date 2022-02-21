@@ -8,188 +8,197 @@
   <style>
     * {
       box-sizing: border-box;
+      margin: 0;
+    }
+
+    html {
+      height: 100%;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
     }
 
     body {
-      width: min(600px, 90vmin);
-      height: min(600px, 90vmin);
+      width: 100vmin;
+      height: 100%;
+      display: flex;
+      align-items: center;
       margin: 0 auto;
+      -webkit-user-select: none;
+      user-select: none;
     }
 
-    body > * {
+    .image {
+      position: relative;
       width: 100%;
-    }
-
-    input {
-      font-size: inherit;
+      line-height: 0;
+      isolation: isolate;
     }
 
     canvas {
+      width: 100%;
       aspect-ratio: 1;
+      image-rendering: pixelated;
     }
 
-    form {
-      background-color: whitesmoke;
-      padding: 8px;
+    #selector {
+      position: absolute;
+      left: 0;
+      top: 0;
+      cursor: crosshair;
+      touch-action: none;
+    }
+
+    header {
+      position: absolute;
+      top: 0;
+      right: 0;
+      left: 0;
+      padding: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    header > * {
+      pointer-events: initial;
+    }
+
+    h1 {
+      font-size: 1rem;
+      line-height: 1;
+      background-color: #fff8;
+      color: #222;
+      padding: 6px;
+      border-radius: 4px;
+      -webkit-backdrop-filter: blur(4px);
+      backdrop-filter: blur(4px);
+    }
+
+    button {
+      background-color: #6668;
+      -webkit-backdrop-filter: blur(4px);
+      backdrop-filter: blur(4px);
+      color: #fff;
+      padding: 6px 10px;
+      line-height: 1;
+      border: none;
+      border-radius: 20px;
+      cursor: pointer;
+      font-weight: bold;
+      letter-spacing: 0.4px;
+      font-size: 0.875rem;
+    }
+
+    button + button {
+      margin-left: 4px;
+    }
+
+    button:hover {
+      background-color: #222a;
+    }
+
+    .download-link {
+      display: none;
     }
   </style>
 </head>
 <body>
-<h1>Burning ship fractal</h1>
 
-<canvas
-  id="canvas"
-></canvas>
+<header>
+  <h1>Burning Ship Fractal</h1>
 
-<form
-  id="form"
-  method="get"
->
-  <fieldset>
-    <legend>Dimensions</legend>
-
-    <label
-      for="midX"
+  <form
+    id="form"
+    method="get"
+  >
+    <button
+      type="submit"
     >
-      X
-    </label>
-    <input
-      id="midX"
-      name="midX"
-      type="number"
-      min="-2"
-      max="2"
-      step="0.05"
-      value="-0.5"
-    />
+      Reset
+    </button>
 
-    <label
-      for="midY"
+    <button
+      id="save"
+      type="button"
     >
-      Y
-    </label>
-    <input
-      id="midY"
-      name="midY"
-      type="number"
-      min="-2"
-      max="2"
-      step="0.05"
-      value="0.5"
-    />
+      Download
+    </button>
+  </form>
+</header>
 
-    <label
-      for="range"
-    >
-      Range
-    </label>
-    <input
-      id="range"
-      name="range"
-      type="range"
-      min="0.05"
-      max="4"
-      step="0.05"
-      value="3"
-    />
-  </fieldset>
 
-  <label
-    for="resolution"
-  >
-    Resolution
-  </label>
-  <input
-    id="resolution"
-    name="resolution"
-    type="range"
-    min="500"
-    max="3000"
-    step="500"
-    value="1000"
-  />
-
-  <label
-    for="iterations"
-  >
-    Iterations
-  </label>
-  <input
-    id="iterations"
-    name="iterations"
-    type="range"
-    min="50"
-    max="300"
-    step="50"
-    value="100"
-  />
-
-  <button
-    type="submit"
-  >
-    Run
-  </button>
-
-  <button
-    type="reset"
-  >
-    Reset
-  </button>
-</form>
+<div class="image">
+  <canvas
+    id="canvas"
+  ></canvas>
+  <canvas
+    id="selector"
+    width="800"
+    height="800"
+  ></canvas>
+</div>
 
 <script>
+
+
+  /* STARTUP */
+
   const canvas = document.getElementById('canvas');
 
   const form = document.getElementById('form');
   form.addEventListener('submit', function (event) {
     event.preventDefault();
-    const formData = new FormData(event.target);
-    const options = Object.fromEntries(formData.entries());
-    draw(canvas, parseOptions(options));
+    draw(canvas);
   });
 
   window.addEventListener('load', function () {
-    const options = loadFromUrl(location.search);
-    draw(canvas, options);
+    draw(canvas);
   });
 
-  function parseFloatWithDefault(data, defaultValue) {
-    const parsed = parseFloat(data || '', 10);
 
-    return isFinite(parsed) ? parsed : defaultValue;
-  }
+  const DEFAULT_OPTIONS = {
+    resolution: 1500,
+    midX: -0.5,
+    midY: 0.5,
+    range: 3,
+    iterations: 80
+  };
 
-  function loadFromUrl(search) {
-    const params = new URLSearchParams(search);
-    const options = Object.fromEntries(params.entries());
 
-    return parseOptions(options);
-  }
 
-  function parseOptions(options) {
-    return {
-      resolution: parseFloatWithDefault(options.resolution, 1000),
-      iterations: parseFloatWithDefault(options.iterations, 100),
-      midX: parseFloatWithDefault(options.midX, -0.5),
-      midY: parseFloatWithDefault(options.midY, 0.5),
-      range: parseFloatWithDefault(options.range, 3)
-    };
-  }
+  /* DRAWING */
 
-  function draw(canvas, options = {}) {
+  let lastDrawn;
+
+  function draw(canvas, options = DEFAULT_OPTIONS) {
     const {
-      resolution: N = 1000,
-      midX = -0.5,
-      midY = 0.5,
-      range = 3,
-      iterations = 80
+      resolution,
+      midX,
+      midY,
+      range,
+      iterations
     } = options;
-    canvas.width = N;
-    canvas.height = N;
 
-    const ctx = canvas.getContext('2d');
-    setTimeout(function () {
-      render(N, iterations, midX, -midY, range, ctx);
+    if (canvas.width !== resolution) {
+      canvas.width = resolution;
+      canvas.height = resolution;
+    }
+
+
+    lastDrawn = {
+      resolution,
+      midX,
+      midY,
+      range,
+      iterations
+    };
+
+    const ctx = canvas.getContext('2d', { alpha: false });
+    requestAnimationFrame(function () {
+      render(resolution, iterations, midX, -midY, range, ctx);
     });
   }
 
@@ -229,6 +238,158 @@
     }
 
     ctx.putImageData(image, 0, 0);
+  }
+
+
+
+  /* SAVING */
+
+  const saveButton = document.getElementById('save');
+  saveButton.addEventListener('click', save);
+
+  function save() {
+    const imageData = canvas.toDataURL();
+
+    const link = document.createElement('a');
+    link.classList.add('download-link');
+    link.download = 'fractal.png';
+    link.href = imageData;
+
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
+
+
+  /* SELECTION */
+
+  const selectorCanvas = document.getElementById('selector');
+  selectorCanvas.addEventListener('pointerdown', function (event) {
+    select(selectorCanvas, event, onSelectFinished);
+  });
+
+  function select(canvas, event, onSelectFinished) {
+
+    // Set up the selection canvas
+    const ctx = canvas.getContext('2d');
+    ctx.imageSmoothingEnabled = false;
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = 'firebrick';
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Get screen -> canvas scaling variables
+    const rect = canvas.getBoundingClientRect();
+    const scale = canvas.width / rect.width;
+
+    // Get start X & Y coordinates
+    const { clientX, clientY } = event;
+    const x = Math.round((clientX - rect.left) * scale);
+    const y = Math.round((clientY - rect.top) * scale);
+
+    // Set up pointer event listeners
+    const {
+      select,
+      end
+    } = selector(canvas, ctx, rect, scale, x, y);
+
+    canvas.addEventListener('pointermove', select);
+
+    function removeEvents() {
+      canvas.removeEventListener('pointermove', select);
+      document.removeEventListener('keydown', cancel);
+      document.removeEventListener('pointerup', endSelection, { once: true });
+    }
+
+    function endSelection(event) {
+      const coordinates = end(event);
+      if (coordinates.width >= 0.0075) {
+        onSelectFinished(coordinates);
+      }
+
+      removeEvents();
+    }
+
+    function cancel(event) {
+      if (event.key !== 'Escape') { return; }
+      removeEvents();
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+
+    document.addEventListener('keydown', cancel, { once: true });
+    document.addEventListener('pointerup', endSelection, { once: true });
+  }
+
+  function selector(canvas, ctx, rect, scale, startX, startY) {
+    return {
+      select(event) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        const { clientX, clientY } = event;
+
+        // Draw a square
+        const width = Math.max(
+          Math.round((clientX - rect.left) * scale) - startX,
+          Math.round((clientY - rect.top) * scale) - startY
+        );
+        ctx.strokeRect(startX, startY, width, width);
+      },
+      end(event) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        const { clientX, clientY } = event;
+
+        // Clamp the ending positions to the boundaries
+        // of the canvas, and compute the last square width.
+        const endX = Math.round((clientX - rect.left) * scale);
+        const endY = Math.round((clientY - rect.top) * scale);
+        const clampX =
+          endX > canvas.width ? canvas.width
+          : endX < 0 ? 0
+          : endX;
+        const clampY =
+          endY > canvas.height ? canvas.height
+          : endY < 0 ? 0
+          : endY;
+        const width = Math.max(
+          (clampX - startX) / canvas.width,
+          (clampY - startY) / canvas.height
+        );
+
+        return {
+          startX: startX / canvas.width,
+          startY: startY / canvas.height,
+          width
+        };
+      }
+    }
+  }
+
+  function onSelectFinished(coordinates) {
+    const {
+      resolution,
+      midX,
+      midY,
+      range,
+      iterations
+    } = (lastDrawn || DEFAULT_OPTIONS);
+
+    // Compute the new midpoint and range from
+    // the selection coordinates.
+    const newRange = coordinates.width * range;
+    const newMidX = (midX - range / 2)
+      + coordinates.startX * range
+      + newRange / 2;
+    const newMidY = (midY + range / 2)
+      - coordinates.startY * range
+      - newRange / 2;
+
+    draw(canvas, {
+      resolution,
+      iterations,
+      midX: newMidX,
+      midY: newMidY,
+      range: newRange
+    });
   }
 </script>
 </body>
