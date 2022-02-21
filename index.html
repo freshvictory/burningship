@@ -19,6 +19,7 @@
     body {
       width: 100vmin;
       height: 100%;
+      overflow: hidden;
       display: flex;
       align-items: center;
       margin: 0 auto;
@@ -51,13 +52,8 @@
       position: absolute;
       top: 0;
       right: 0;
-      left: 0;
-      padding: 10px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 10px;
+      padding: 5px;
+      text-align: right;
       pointer-events: none;
       z-index: 1;
     }
@@ -75,6 +71,7 @@
       border-radius: 4px;
       -webkit-backdrop-filter: blur(4px);
       backdrop-filter: blur(4px);
+      margin-bottom: 5px;
     }
 
     button {
@@ -90,10 +87,6 @@
       font-weight: bold;
       letter-spacing: 0.4px;
       font-size: 0.875rem;
-    }
-
-    button + button {
-      margin-left: 4px;
     }
 
     button:hover {
@@ -118,13 +111,6 @@
       type="submit"
     >
       Reset
-    </button>
-
-    <button
-      id="save"
-      type="button"
-    >
-      Download
     </button>
   </form>
 </header>
@@ -238,26 +224,6 @@
     }
 
     ctx.putImageData(image, 0, 0);
-  }
-
-
-
-  /* SAVING */
-
-  const saveButton = document.getElementById('save');
-  saveButton.addEventListener('click', save);
-
-  function save() {
-    const imageData = canvas.toDataURL();
-
-    const link = document.createElement('a');
-    link.classList.add('download-link');
-    link.download = 'fractal.png';
-    link.href = imageData;
-
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
   }
 
 
