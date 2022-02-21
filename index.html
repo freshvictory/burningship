@@ -303,7 +303,7 @@
 
     function endSelection(event) {
       const coordinates = end(event);
-      if (coordinates.width >= 0.0075) {
+      if (Math.abs(coordinates.width) >= 0.0075) {
         onSelectFinished(coordinates);
       }
 
@@ -388,7 +388,7 @@
       iterations,
       midX: newMidX,
       midY: newMidY,
-      range: newRange
+      range: Math.abs(newRange)
     });
   }
 </script>
