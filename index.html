@@ -1,290 +1,260 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Burning ship</title>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Burning ship</title>
 
-  <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-    }
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+      }
 
-    html {
-      height: 100%;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-    }
+      html {
+        height: 100%;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
+      }
 
-    body {
-      width: 100vmin;
-      height: 100%;
-      overflow: hidden;
-      display: flex;
-      align-items: center;
-      margin: 0 auto;
-      -webkit-user-select: none;
-      user-select: none;
-    }
+      body {
+        width: 100vmin;
+        height: 100%;
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        margin: 0 auto;
+        -webkit-user-select: none;
+        user-select: none;
+      }
 
-    .image {
-      position: relative;
-      width: 100%;
-      line-height: 0;
-      isolation: isolate;
-    }
+      .image {
+        position: relative;
+        width: 100%;
+        line-height: 0;
+        isolation: isolate;
+      }
 
-    canvas {
-      width: 100%;
-      aspect-ratio: 1;
-      image-rendering: pixelated;
-    }
+      canvas {
+        width: 100%;
+        aspect-ratio: 1;
+        image-rendering: pixelated;
+      }
 
-    #selector {
-      position: absolute;
-      left: 0;
-      top: 0;
-      cursor: crosshair;
-      touch-action: none;
-    }
+      #selector {
+        position: absolute;
+        left: 0;
+        top: 0;
+        cursor: crosshair;
+        touch-action: none;
+      }
 
-    header {
-      position: absolute;
-      top: 0;
-      right: 0;
-      padding: 5px;
-      text-align: right;
-      pointer-events: none;
-      z-index: 1;
-    }
+      header {
+        position: absolute;
+        top: 0;
+        right: 0;
+        padding: 5px;
+        text-align: right;
+        pointer-events: none;
+        z-index: 1;
+      }
 
-    header > * {
-      pointer-events: initial;
-    }
+      header > * {
+        pointer-events: initial;
+      }
 
-    h1 {
-      font-size: 1rem;
-      line-height: 1;
-      background-color: #fff8;
-      color: #222;
-      padding: 6px;
-      border-radius: 4px;
-      -webkit-backdrop-filter: blur(4px);
-      backdrop-filter: blur(4px);
-      margin-bottom: 5px;
-    }
+      h1 {
+        font-size: 1rem;
+        line-height: 1;
+        background-color: #fff8;
+        color: #222;
+        padding: 6px;
+        border-radius: 4px;
+        -webkit-backdrop-filter: blur(4px);
+        backdrop-filter: blur(4px);
+        margin-bottom: 5px;
+      }
 
-    button {
-      background-color: #6668;
-      -webkit-backdrop-filter: blur(4px);
-      backdrop-filter: blur(4px);
-      color: #fff;
-      padding: 6px 10px;
-      line-height: 1;
-      border: none;
-      border-radius: 20px;
-      cursor: pointer;
-      font-weight: bold;
-      letter-spacing: 0.4px;
-      font-size: 0.875rem;
-    }
+      button {
+        background-color: #6668;
+        -webkit-backdrop-filter: blur(4px);
+        backdrop-filter: blur(4px);
+        color: #fff;
+        padding: 6px 10px;
+        line-height: 1;
+        border: none;
+        border-radius: 20px;
+        cursor: pointer;
+        font-weight: bold;
+        letter-spacing: 0.4px;
+        font-size: 0.875rem;
+      }
 
-    button:hover {
-      background-color: #222a;
-    }
+      button:hover {
+        background-color: #222a;
+      }
 
-    .download-link {
-      display: none;
-    }
-  </style>
-</head>
-<body>
+      .download-link {
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Burning Ship Fractal</h1>
 
-<header>
-  <h1>Burning Ship Fractal</h1>
+      <form id="form" method="get">
+        <button type="submit">Reset</button>
+      </form>
+    </header>
 
-  <form
-    id="form"
-    method="get"
-  >
-    <button
-      type="submit"
-    >
-      Reset
-    </button>
-  </form>
-</header>
+    <div class="image">
+      <canvas id="canvas"></canvas>
+      <canvas id="selector" width="800" height="800"></canvas>
+    </div>
 
+    <script>
+      // @ts-check
+      "use strict";
 
-<div class="image">
-  <canvas
-    id="canvas"
-  ></canvas>
-  <canvas
-    id="selector"
-    width="800"
-    height="800"
-  ></canvas>
-</div>
+      /* STARTUP */
 
-<script>
-  // @ts-check
-  'use strict';
+      const DEFAULT_OPTIONS = {
+        resolution: 1500,
+        midX: -0.5,
+        midY: 0.5,
+        range: 3,
+        iterations: 80,
+      };
 
+      let lastDrawn = DEFAULT_OPTIONS;
 
-  /* STARTUP */
+      /**
+       * @typedef
+       *    {function (number, number, number, number, number, HTMLCanvasElement): void}
+       *    Renderer
+       */
 
-  const DEFAULT_OPTIONS = {
-    resolution: 1500,
-    midX: -0.5,
-    midY: 0.5,
-    range: 3,
-    iterations: 80
-  };
+      /**
+       * @param {Renderer} renderer
+       */
+      function startup(renderer) {
+        // Set up drawing canvas
 
-  let lastDrawn = DEFAULT_OPTIONS;
+        const canvas = document.getElementById("canvas");
 
+        if (!(canvas instanceof HTMLCanvasElement)) {
+          return;
+        }
 
-  /**
-   * @typedef
-   *    {function (number, number, number, number, number, HTMLCanvasElement): void}
-   *    Renderer
-   */
+        const drawer = draw.bind(this, renderer, canvas);
 
+        // Set up form
 
-  /**
-   * @param {Renderer} renderer
-   */
-  function startup(renderer) {
-    // Set up drawing canvas
+        const form = document.getElementById("form");
 
-    const canvas = document.getElementById('canvas');
+        if (!(form instanceof HTMLFormElement)) {
+          return;
+        }
 
-    if (!(canvas instanceof HTMLCanvasElement)) {
-      return;
-    }
+        form.addEventListener("submit", function (event) {
+          event.preventDefault();
+          drawer();
+        });
 
-    const drawer = draw.bind(this, renderer, canvas);
+        // Draw on load
 
+        window.addEventListener("load", function () {
+          drawer();
+        });
 
-    // Set up form
+        // Set up selection
 
-    const form = document.getElementById('form');
+        const selectorCanvas = document.getElementById("selector");
 
-    if (!(form instanceof HTMLFormElement)) {
-      return;
-    }
+        if (!(selectorCanvas instanceof HTMLCanvasElement)) {
+          return;
+        }
 
-    form.addEventListener('submit', function (event) {
-      event.preventDefault();
-      drawer();
-    });
+        makeSelectable(function (selectInCanvas) {
+          const newDimensions = selectInCanvas(lastDrawn);
 
+          drawer({ ...lastDrawn, ...newDimensions });
+        }, selectorCanvas);
+      }
 
-    // Draw on load
+      startup(render2d);
 
-    window.addEventListener('load', function () {
-      drawer();
-    });
+      /* DRAWING */
 
+      /**
+       * @param {Renderer} render
+       * @param {typeof DEFAULT_OPTIONS} options
+       * @param {HTMLCanvasElement} canvas
+       */
+      function draw(render, canvas, options = DEFAULT_OPTIONS) {
+        const { resolution, midX, midY, range, iterations } = (lastDrawn =
+          options);
 
-    // Set up selection
+        if (canvas.width !== resolution) {
+          canvas.width = resolution;
+          canvas.height = resolution;
+        }
 
-    const selectorCanvas = document.getElementById('selector');
+        requestAnimationFrame(function () {
+          render(resolution, iterations, midX, midY, range, canvas);
+        });
+      }
 
-    if (!(selectorCanvas instanceof HTMLCanvasElement)) {
-      return;
-    }
+      /**
+       * @type Renderer
+       */
+      function render2d(N, iterations, midX, midY, range, canvas) {
+        const ctx = canvas.getContext("2d", { alpha: false });
+        const image = ctx.createImageData(N, N);
 
-    makeSelectable(function (selectInCanvas) {
-      const newDimensions = selectInCanvas(lastDrawn);
+        const bound = 0.5 * range;
+        const boundX = midX - bound;
+        const boundY = -midY - bound;
+        const interval = range / N;
+        const colorMultiplier = 255 / iterations;
 
-      drawer({ ...lastDrawn, ...newDimensions });
-    }, selectorCanvas);
-  }
+        let c1, c2, n, color, z1, z2, p1, p2, dataOffset, offset;
 
-
-  startup(renderWegGL2);
-
-
-  /* DRAWING */
-
-  /**
-   * @param {Renderer} render
-   * @param {typeof DEFAULT_OPTIONS} options
-   * @param {HTMLCanvasElement} canvas
-   */
-  function draw(render, canvas, options = DEFAULT_OPTIONS) {
-    const {
-      resolution,
-      midX,
-      midY,
-      range,
-      iterations
-    } = lastDrawn = options;
-
-    if (canvas.width !== resolution) {
-      canvas.width = resolution;
-      canvas.height = resolution;
-    }
-
-    requestAnimationFrame(function () {
-      render(resolution, iterations, midX, midY, range, canvas);
-    });
-  }
-
-
-  /**
-   * @type Renderer
-   */
-  function render2d(N, iterations, midX, midY, range, canvas) {
-    const ctx = canvas.getContext('2d', { alpha: false });
-    const image = ctx.createImageData(N, N);
-
-    const bound = 0.5 * range;
-    const boundX = midX - bound;
-    const boundY = -midY - bound;
-    const interval = range / N;
-    const colorMultiplier = 255 / iterations;
-
-    let c1, c2, n, color, z1, z2, p1, p2, dataOffset, offset;
-
-    for (let i = 0; i < N; i++) {
-      dataOffset = i * 4;
-      for (let j = 0; j < N; j++) {
-        c1 = boundX + i * interval;
-        c2 = boundY + j * interval;
-        z1 = z2 = n = 0;
-        for (n = 0; n < iterations; n++) {
-          p1 = z1 * z1 - z2 * z2;
-          p2 = 2 * (z1 * z2);
-          z1 = p1 + c1;
-          z2 = p2 + c2;
-          if (z1 * z1 + z2 * z2 > 4) {
-            break;
+        for (let i = 0; i < N; i++) {
+          dataOffset = i * 4;
+          for (let j = 0; j < N; j++) {
+            c1 = boundX + i * interval;
+            c2 = boundY + j * interval;
+            z1 = z2 = n = 0;
+            for (n = 0; n < iterations; n++) {
+              p1 = z1 * z1 - z2 * z2;
+              p2 = 2 * Math.abs(z1 * z2);
+              z1 = p1 + c1;
+              z2 = p2 + c2;
+              if (z1 * z1 + z2 * z2 > 4) {
+                break;
+              }
+            }
+            color = 255 - n * colorMultiplier;
+            offset = dataOffset + j * N * 4;
+            image.data[offset] = color;
+            image.data[offset + 1] = color;
+            image.data[offset + 2] = color;
+            image.data[offset + 3] = 255;
           }
         }
-        color = 255 - n * colorMultiplier;
-        offset = dataOffset + j * N * 4;
-        image.data[offset] = color;
-        image.data[offset + 1] = color;
-        image.data[offset + 2] = color;
-        image.data[offset + 3] = 255;
+
+        ctx.putImageData(image, 0, 0);
       }
-    }
 
-    ctx.putImageData(image, 0, 0);
-  }
+      /**
+       * @type Renderer
+       */
+      function renderWegGL2(N, iterations, midX, midY, range, canvas) {
+        const gl = canvas.getContext("webgl2", { alpha: false });
 
-
-
-  /**
-   * @type Renderer
-   */
-  function renderWegGL2(N, iterations, midX, midY, range, canvas) {
-    const gl = canvas.getContext('webgl2', { alpha: false });
-
-    const vertexShaderSource = `#version 300 es
+        const vertexShaderSource = `#version 300 es
 
       // an attribute is an input (in) to a vertex shader.
       // It will receive data from a buffer
@@ -299,8 +269,7 @@
       }
     `;
 
-
-    const fragmentShaderSource = `#version 300 es
+        const fragmentShaderSource = `#version 300 es
 
       precision highp float;
 
@@ -345,274 +314,273 @@
       }
     `;
 
+        const vertexShader = loadShader(
+          gl,
+          gl.VERTEX_SHADER,
+          vertexShaderSource
+        );
+        const fragmentShader = loadShader(
+          gl,
+          gl.FRAGMENT_SHADER,
+          fragmentShaderSource
+        );
 
-    const vertexShader = loadShader(gl, gl.VERTEX_SHADER, vertexShaderSource);
-    const fragmentShader = loadShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSource);
+        const program = createProgram(gl, vertexShader, fragmentShader);
 
-    const program = createProgram(gl, vertexShader, fragmentShader);
+        const positionAttributeLocation = gl.getAttribLocation(
+          program,
+          "a_position"
+        );
+        const positionBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
 
-    const positionAttributeLocation = gl.getAttribLocation(program, 'a_position');
-    const positionBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+        const positions = [-1, 1, -1, -1, 1, -1, -1, 1, 1, -1, 1, 1];
 
-    const positions = [
-      -1, 1, -1, -1, 1, -1,
-      -1, 1, 1, -1, 1, 1
-    ];
+        gl.bufferData(
+          gl.ARRAY_BUFFER,
+          new Float32Array(positions),
+          gl.STATIC_DRAW
+        );
 
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW);
+        const vertexArray = gl.createVertexArray();
+        gl.bindVertexArray(vertexArray);
+        gl.enableVertexAttribArray(positionAttributeLocation);
 
-    const vertexArray = gl.createVertexArray();
-    gl.bindVertexArray(vertexArray);
-    gl.enableVertexAttribArray(positionAttributeLocation);
+        const size = 2;
+        const type = gl.FLOAT;
+        const normalize = false;
+        const stride = 0;
+        const offset = 0;
+        gl.vertexAttribPointer(
+          positionAttributeLocation,
+          size,
+          type,
+          normalize,
+          stride,
+          offset
+        );
 
-    const size = 2;
-    const type = gl.FLOAT;
-    const normalize = false;
-    const stride = 0;
-    const offset = 0;
-    gl.vertexAttribPointer(
-      positionAttributeLocation,
-      size,
-      type,
-      normalize,
-      stride,
-      offset
-    );
+        gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
+        gl.clearColor(0, 0, 0, 0);
+        gl.clear(gl.COLOR_BUFFER_BIT);
 
-    gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
-    gl.clearColor(0, 0, 0, 0);
-    gl.clear(gl.COLOR_BUFFER_BIT);
+        gl.useProgram(program);
 
-    gl.useProgram(program);
+        const resolutionLocation = gl.getUniformLocation(program, "resolution");
+        gl.uniform1f(resolutionLocation, N);
+        const midXLocation = gl.getUniformLocation(program, "midX");
+        gl.uniform1f(midXLocation, -midX);
+        const midYLocation = gl.getUniformLocation(program, "midY");
+        gl.uniform1f(midYLocation, -midY);
+        const rangeLocation = gl.getUniformLocation(program, "range");
+        gl.uniform1f(rangeLocation, range);
+        const maxIterationsLocation = gl.getUniformLocation(
+          program,
+          "maxIterations"
+        );
+        gl.uniform1f(maxIterationsLocation, iterations);
 
-    const resolutionLocation = gl.getUniformLocation(program, 'resolution');
-    gl.uniform1f(resolutionLocation, N);
-    const midXLocation = gl.getUniformLocation(program, 'midX');
-    gl.uniform1f(midXLocation, -midX);
-    const midYLocation = gl.getUniformLocation(program, 'midY');
-    gl.uniform1f(midYLocation, -midY);
-    const rangeLocation = gl.getUniformLocation(program, 'range');
-    gl.uniform1f(rangeLocation, range);
-    const maxIterationsLocation = gl.getUniformLocation(program, 'maxIterations');
-    gl.uniform1f(maxIterationsLocation, iterations);
-
-    const primitiveType = gl.TRIANGLES;
-    const drawOffset = 0;
-    const drawCount = positions.length / size;
-    gl.drawArrays(primitiveType, drawOffset, drawCount);
-  }
-
-
-  /**
-   * @param {WebGL2RenderingContext} gl
-   * @param {WebGLShader} vertexShader
-   * @param {WebGLShader} fragmentShader
-   */
-  function createProgram(gl, vertexShader, fragmentShader) {
-    const shaderProgram = gl.createProgram();
-    gl.attachShader(shaderProgram, vertexShader);
-    gl.attachShader(shaderProgram, fragmentShader);
-    gl.linkProgram(shaderProgram);
-
-    if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
-      console.error(
-        '[WEBGL] Unable to initialize the shader program',
-        gl.getProgramInfoLog(shaderProgram)
-      );
-
-      return null;
-    }
-
-    return shaderProgram;
-  }
-
-
-  /**
-   * @param {WebGL2RenderingContext} gl
-   * @param {number} type
-   * @param {string} source
-   */
-  function loadShader(gl, type, source) {
-    const shader = gl.createShader(type);
-    gl.shaderSource(shader, source);
-    gl.compileShader(shader);
-
-    if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-      console.error(
-        '[WEBGL] Error compiling shader',
-        gl.getShaderInfoLog(shader)
-      );
-      gl.deleteShader(shader);
-
-      return null;
-    }
-
-    return shader;
-  }
-
-
-
-  /* SELECTION */
-
-  /**
-   * @typedef
-   *    {{startX: number, startY: number, width: number }}
-   *    SelectionCoordinates
-   *
-   * @typedef
-   *    {{ midX: number, midY: number, range: number }}
-   *    TargetDimensions
-   */
-
-
-  /**
-   * @param
-   *    {function (function (TargetDimensions): TargetDimensions): void}
-   *    onSelection
-   * @param {HTMLCanvasElement} canvas
-   */
-  function makeSelectable(onSelection, canvas) {
-    canvas.addEventListener('pointerdown', function (event) {
-      select(canvas, event, onSelection);
-    });
-  }
-
-
-  /**
-   * @param {HTMLCanvasElement} canvas
-   * @param {PointerEvent} event
-   * @param
-   *    {function (function(TargetDimensions): TargetDimensions): void}
-   *    onSelection
-   */
-  function select(canvas, event, onSelection) {
-    // Set up the selection canvas
-    const ctx = canvas.getContext('2d');
-    ctx.imageSmoothingEnabled = false;
-    ctx.lineWidth = 2;
-    ctx.strokeStyle = 'firebrick';
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    // Get screen -> canvas scaling variables
-    const rect = canvas.getBoundingClientRect();
-    const scale = canvas.width / rect.width;
-
-    // Get start X & Y coordinates
-    const { clientX, clientY } = event;
-    const x = Math.round((clientX - rect.left) * scale);
-    const y = Math.round((clientY - rect.top) * scale);
-
-    // Set up pointer event listeners
-    const {
-      select,
-      end
-    } = selector(canvas, ctx, rect, scale, x, y);
-
-    canvas.addEventListener('pointermove', select);
-
-    function removeEvents() {
-      canvas.removeEventListener('pointermove', select);
-      document.removeEventListener('keydown', cancel);
-      document.removeEventListener('pointerup', endSelection);
-    }
-
-    function endSelection(event) {
-      const coordinates = end(event);
-      if (Math.abs(coordinates.width) >= 0.0075) {
-        onSelection(transformCoordinates.bind(this, coordinates));
+        const primitiveType = gl.TRIANGLES;
+        const drawOffset = 0;
+        const drawCount = positions.length / size;
+        gl.drawArrays(primitiveType, drawOffset, drawCount);
       }
 
-      removeEvents();
-    }
+      /**
+       * @param {WebGL2RenderingContext} gl
+       * @param {WebGLShader} vertexShader
+       * @param {WebGLShader} fragmentShader
+       */
+      function createProgram(gl, vertexShader, fragmentShader) {
+        const shaderProgram = gl.createProgram();
+        gl.attachShader(shaderProgram, vertexShader);
+        gl.attachShader(shaderProgram, fragmentShader);
+        gl.linkProgram(shaderProgram);
 
-    function cancel(event) {
-      if (event.key !== 'Escape') { return; }
-      removeEvents();
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-    }
+        if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
+          console.error(
+            "[WEBGL] Unable to initialize the shader program",
+            gl.getProgramInfoLog(shaderProgram)
+          );
 
-    document.addEventListener('keydown', cancel, { once: true });
-    document.addEventListener('pointerup', endSelection, { once: true });
-  }
+          return null;
+        }
 
+        return shaderProgram;
+      }
 
-  /**
-   * @param {HTMLCanvasElement} canvas
-   * @param {CanvasRenderingContext2D} ctx
-   * @param {DOMRect} rect
-   * @param {number} scale
-   * @param {number} startX
-   * @param {number} startY
-   */
-  function selector(canvas, ctx, rect, scale, startX, startY) {
-    return {
-      select(event) {
+      /**
+       * @param {WebGL2RenderingContext} gl
+       * @param {number} type
+       * @param {string} source
+       */
+      function loadShader(gl, type, source) {
+        const shader = gl.createShader(type);
+        gl.shaderSource(shader, source);
+        gl.compileShader(shader);
+
+        if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+          console.error(
+            "[WEBGL] Error compiling shader",
+            gl.getShaderInfoLog(shader)
+          );
+          gl.deleteShader(shader);
+
+          return null;
+        }
+
+        return shader;
+      }
+
+      /* SELECTION */
+
+      /**
+       * @typedef
+       *    {{startX: number, startY: number, width: number }}
+       *    SelectionCoordinates
+       *
+       * @typedef
+       *    {{ midX: number, midY: number, range: number }}
+       *    TargetDimensions
+       */
+
+      /**
+       * @param
+       *    {function (function (TargetDimensions): TargetDimensions): void}
+       *    onSelection
+       * @param {HTMLCanvasElement} canvas
+       */
+      function makeSelectable(onSelection, canvas) {
+        canvas.addEventListener("pointerdown", function (event) {
+          select(canvas, event, onSelection);
+        });
+      }
+
+      /**
+       * @param {HTMLCanvasElement} canvas
+       * @param {PointerEvent} event
+       * @param
+       *    {function (function(TargetDimensions): TargetDimensions): void}
+       *    onSelection
+       */
+      function select(canvas, event, onSelection) {
+        // Set up the selection canvas
+        const ctx = canvas.getContext("2d");
+        ctx.imageSmoothingEnabled = false;
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = "firebrick";
         ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Get screen -> canvas scaling variables
+        const rect = canvas.getBoundingClientRect();
+        const scale = canvas.width / rect.width;
+
+        // Get start X & Y coordinates
         const { clientX, clientY } = event;
+        const x = Math.round((clientX - rect.left) * scale);
+        const y = Math.round((clientY - rect.top) * scale);
 
-        // Draw a square
-        const width = Math.max(
-          Math.round((clientX - rect.left) * scale) - startX,
-          Math.round((clientY - rect.top) * scale) - startY
-        );
-        ctx.strokeRect(startX, startY, width, width);
-      },
-      end(event) {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        // Set up pointer event listeners
+        const { select, end } = selector(canvas, ctx, rect, scale, x, y);
 
-        const { clientX, clientY } = event;
+        canvas.addEventListener("pointermove", select);
 
-        // Clamp the ending positions to the boundaries
-        // of the canvas, and compute the last square width.
-        const endX = Math.round((clientX - rect.left) * scale);
-        const endY = Math.round((clientY - rect.top) * scale);
-        const clampX =
-          endX > canvas.width ? canvas.width
-          : endX < 0 ? 0
-          : endX;
-        const clampY =
-          endY > canvas.height ? canvas.height
-          : endY < 0 ? 0
-          : endY;
-        const width = Math.max(
-          (clampX - startX) / canvas.width,
-          (clampY - startY) / canvas.height
-        );
+        function removeEvents() {
+          canvas.removeEventListener("pointermove", select);
+          document.removeEventListener("keydown", cancel);
+          document.removeEventListener("pointerup", endSelection);
+        }
 
+        function endSelection(event) {
+          const coordinates = end(event);
+          if (Math.abs(coordinates.width) >= 0.0075) {
+            onSelection(transformCoordinates.bind(this, coordinates));
+          }
+
+          removeEvents();
+        }
+
+        function cancel(event) {
+          if (event.key !== "Escape") {
+            return;
+          }
+          removeEvents();
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+
+        document.addEventListener("keydown", cancel, { once: true });
+        document.addEventListener("pointerup", endSelection, { once: true });
+      }
+
+      /**
+       * @param {HTMLCanvasElement} canvas
+       * @param {CanvasRenderingContext2D} ctx
+       * @param {DOMRect} rect
+       * @param {number} scale
+       * @param {number} startX
+       * @param {number} startY
+       */
+      function selector(canvas, ctx, rect, scale, startX, startY) {
         return {
-          startX: startX / canvas.width,
-          startY: startY / canvas.height,
-          width
+          select(event) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            const { clientX, clientY } = event;
+
+            // Draw a square
+            const width = Math.max(
+              Math.round((clientX - rect.left) * scale) - startX,
+              Math.round((clientY - rect.top) * scale) - startY
+            );
+            ctx.strokeRect(startX, startY, width, width);
+          },
+          end(event) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            const { clientX, clientY } = event;
+
+            // Clamp the ending positions to the boundaries
+            // of the canvas, and compute the last square width.
+            const endX = Math.round((clientX - rect.left) * scale);
+            const endY = Math.round((clientY - rect.top) * scale);
+            const clampX =
+              endX > canvas.width ? canvas.width : endX < 0 ? 0 : endX;
+            const clampY =
+              endY > canvas.height ? canvas.height : endY < 0 ? 0 : endY;
+            const width = Math.max(
+              (clampX - startX) / canvas.width,
+              (clampY - startY) / canvas.height
+            );
+
+            return {
+              startX: startX / canvas.width,
+              startY: startY / canvas.height,
+              width,
+            };
+          },
         };
       }
-    }
-  }
 
+      /**
+       * @param {SelectionCoordinates} coordinates
+       * @param {TargetDimensions} _
+       *
+       * @returns {TargetDimensions}
+       */
+      function transformCoordinates(coordinates, { midX, midY, range }) {
+        // Compute the new midpoint and range from
+        // the selection coordinates.
+        const newRange = coordinates.width * range;
+        const newMidX =
+          midX - range / 2 + coordinates.startX * range + newRange / 2;
+        const newMidY =
+          midY + range / 2 - coordinates.startY * range - newRange / 2;
 
-  /**
-   * @param {SelectionCoordinates} coordinates
-   * @param {TargetDimensions} _
-   *
-   * @returns {TargetDimensions}
-   */
-  function transformCoordinates(coordinates, { midX, midY, range }) {
-    // Compute the new midpoint and range from
-    // the selection coordinates.
-    const newRange = coordinates.width * range;
-    const newMidX = (midX - range / 2)
-      + coordinates.startX * range
-      + newRange / 2;
-    const newMidY = (midY + range / 2)
-      - coordinates.startY * range
-      - newRange / 2;
-
-    return {
-      range: Math.abs(newRange),
-      midX: newMidX,
-      midY: newMidY
-    };
-  }
-</script>
-</body>
+        return {
+          range: Math.abs(newRange),
+          midX: newMidX,
+          midY: newMidY,
+        };
+      }
+    </script>
+  </body>
 </html>
